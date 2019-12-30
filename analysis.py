@@ -11,7 +11,7 @@ from collections import defaultdict
 from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
 
 train = pd.read_csv(
-    "/Users/rishimalve/Documents/Masters/Sem-3/CS 657/train-balanced-sarcasm.csv")
+    "/Users/rishimalve/Documents/Masters/Sem-3/CS_657/final_project/data/train-balanced-sarcasm.csv")
 
 train.dropna(subset=['comment'], inplace=True)
 
@@ -97,7 +97,7 @@ train0_df = train[train["label"] == 0]
 ## custom function for ngram generation ##
 
 
-def generate_ngrams(text, n_gram=2):
+def generate_ngrams(text, n_gram=1):
     token = [token for token in text.lower().split(
         " ") if token != "" if token not in STOPWORDS]
     ngrams = zip(*[token[i:] for i in range(n_gram)])
@@ -175,7 +175,7 @@ def plot_wordcloud(text, mask=None, max_words=200, max_font_size=100, figure_siz
     plt.show()
 
 
-plot_wordcloud(train1_df["comment"], title="Word Cloud of Comment")
+plot_wordcloud(train1_df["comment"], title="Word Cloud of Sarcastic Comments")
 
 
 sarcastic_comments = str(train[train['label'] == 1]['comment'])

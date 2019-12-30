@@ -29,7 +29,7 @@ df.printSchema()
 df.show()
 
 comments = df.rdd
-comments = comments.map(lambda x: x['combined'].encode("utf-8")).filter(lambda x: x is not None)
+comments = comments.map(lambda x: x['comment'].encode("utf-8")).filter(lambda x: x is not None)
 
 comments = comments.map(lambda document: re.split(" ", document)).map(
     lambda word: [x for x in word if (len(x) > 3) and x != '']).zipWithIndex()
@@ -45,7 +45,7 @@ idf = IDF(inputCol="raw_features", outputCol="features")
 idfModel = idf.fit(result_cv)
 result_tfidf = idfModel.transform(result_cv)
 
-lda = LDA(k=5, maxIter=100)
+lda = LDA(k=3, maxIter=50)
 model = lda.fit(result_tfidf[['index','features']])
 
 transformed = model.transform(result_tfidf)
@@ -61,9 +61,9 @@ for i in cvmodel.vocabulary:
     vocabulary[j] = i.encode("utf-8")
     j += 1
 
-model_df = model.describeTopics(8)
+model_df = model.describeTopics(7)
 
-termIndices_rdd = model.describeTopics(8).select('termIndices').rdd.map(lambda x: x[0])
+termIndices_rdd = model.describeTopics(7).select('termIndices').rdd.map(lambda x: x[0])
 
 termIndices_rdd = termIndices_rdd.map(lambda x: [vocabulary[y] for y in x]).zipWithIndex()
 
@@ -131,7 +131,7 @@ def filter_bad_docs(data):
 
 
 # FORMAT DATA AND PASS IT TO PYLDAVIS
-data = format_data_to_pyldavis(df_tweets, cvmodel, transformed, model)
+data = format_data_to_pyldavis(df_comments, cvmodel, transformed, model)
 filter_bad_docs(data) # this is, because for some reason some docs apears with 0 value in all the vectors, or the norm is not 1, so I filter those docs.
 py_lda_prepared_data = pyLDAvis.prepare(**data)
 pyLDAvis.save_html(py_lda_prepared_data, '/Users/rishimalve/Documents/Masters/Sem-3/CS 657/HW3/clusters.html')

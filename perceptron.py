@@ -21,40 +21,88 @@ sc.setLogLevel("ERROR")
 # SQL Context.
 sqlContext = SQLContext(sc)
 
-df = spark.read.csv('data/features.csv', header=True, inferSchema=True)
-df.printSchema()
-df.show()
+contrast_based = spark.read.format("libsvm").load("/Users/rishimalve/Documents/Masters/Sem-3/CS_657/final_project/data/contrast_based.txt")
 
-features_rdd = df.rdd
+text_expression_based = spark.read.format("libsvm").load("/Users/rishimalve/Documents/Masters/Sem-3/CS_657/final_project/data/text_expression_based.txt")
 
-features_rdd = features_rdd.map(lambda line: LabeledPoint(line[0],line[1:]))
+emotion_based = spark.read.format("libsvm").load("/Users/rishimalve/Documents/Masters/Sem-3/CS_657/final_project/data/emotion_based.txt")
 
-MLUtils.saveAsLibSVMFile(features_rdd, "data/input/")
+for i in range(1,6):
 
-vectorAssembler = VectorAssembler(inputCols=['Exclamations', 'Question_Marks', 'Ellipsis', 'Interjections', 'Capitals', 'RepeatLetters', 'Positive_word_count', 'Negative_word_count',
-                                             'Polarity_flips', 'Nouns', 'Verbs', 'PositiveIntensifiers', 'NegativeIntensifiers', 'Bigrams', 'Trigram', 'Passive_aggressive_count'], outputCol='features')
+    print("Fold Number : " + str(i))
+    print("############## contrast based ##############")
 
-v_df = vectorAssembler.transform(df)
-# v_df = v_df.withColumn('label', col("Trip_Duration"))
-v_df = v_df.select(['label','features'])
+    train, test = contrast_based.randomSplit([0.8, 0.2])
 
-v_train, v_test = v_df.randomSplit([0.7, 0.3])
+    layers = [3, 5, 5, 2]
+
+    trainer = MultilayerPerceptronClassifier(maxIter=5000, layers=layers)
+
+    model = trainer.fit(train)
+    result = model.transform(test)
+    predictionAndLabels = result.select("prediction", "label")
+    evaluator = MulticlassClassificationEvaluator(predictionCol="prediction", metricName="f1")
+    f1 = evaluator.evaluate(predictionAndLabels.select(['label','prediction']))
+    evaluator = MulticlassClassificationEvaluator(predictionCol="prediction", metricName="accuracy")
+    accuracy = evaluator.evaluate(predictionAndLabels.select(['label','prediction']))
+    evaluator = MulticlassClassificationEvaluator(predictionCol="prediction", metricName="weightedRecall")
+    weightedRecall = evaluator.evaluate(predictionAndLabels.select(['label','prediction']))
+    evaluator = MulticlassClassificationEvaluator(predictionCol="prediction", metricName="weightedPrecision")
+    weightedPrecision = evaluator.evaluate(predictionAndLabels.select(['label','prediction']))
+
+    print("f1 : " + str(f1))
+    print("accuracy : " + str(accuracy))
+    print("weightedRecall : " + str(weightedRecall))
+    print("weightedPrecision : " + str(weightedPrecision))
 
 
+    print("############## text expression based ##############")
 
-final_rdd = v_df.rdd.map(lambda row: LabeledPoint(
-    row['label'], row['features'].toArray()))
+    train, test = text_expression_based.randomSplit([0.8, 0.2])
 
-data = spark.read.format("libsvm").load("/Users/rishimalve/Documents/Masters/data.txt")
+    layers = [8, 14, 14, 2]
 
-train, test = data.randomSplit([0.7, 0.3])
+    trainer = MultilayerPerceptronClassifier(maxIter=100, layers=layers)
 
-train_df = sqlContext.createDataFrame(train, ['label', 'features'])
+    model = trainer.fit(train)
+    result = model.transform(test)
+    predictionAndLabels = result.select("prediction", "label")
+    evaluator = MulticlassClassificationEvaluator(predictionCol="prediction", metricName="f1")
+    f1 = evaluator.evaluate(predictionAndLabels.select(['label','prediction']))
+    evaluator = MulticlassClassificationEvaluator(predictionCol="prediction", metricName="accuracy")
+    accuracy = evaluator.evaluate(predictionAndLabels.select(['label','prediction']))
+    evaluator = MulticlassClassificationEvaluator(predictionCol="prediction", metricName="weightedRecall")
+    weightedRecall = evaluator.evaluate(predictionAndLabels.select(['label','prediction']))
+    evaluator = MulticlassClassificationEvaluator(predictionCol="prediction", metricName="weightedPrecision")
+    weightedPrecision = evaluator.evaluate(predictionAndLabels.select(['label','prediction']))
 
-layers = [16, 5, 4, 2]
+    print("f1 : " + str(f1))
+    print("accuracy : " + str(accuracy))
+    print("weightedRecall : " + str(weightedRecall))
+    print("weightedPrecision : " + str(weightedPrecision))
 
-trainer = MultilayerPerceptronClassifier(maxIter=100, layers=layers, blockSize=128, seed=1234)
 
-model = trainer.fit(train)
-result = model.transform(test)
-predictionAndLabels = result.select("prediction", "label")
+    print("############## emotion based ##############")
+
+    train, test = emotion_based.randomSplit([0.8, 0.2])
+
+    layers = [3, 5, 5, 2]
+
+    trainer = MultilayerPerceptronClassifier(maxIter=100, layers=layers)
+
+    model = trainer.fit(train)
+    result = model.transform(test)
+    predictionAndLabels = result.select("prediction", "label")
+    evaluator = MulticlassClassificationEvaluator(predictionCol="prediction", metricName="f1")
+    f1 = evaluator.evaluate(predictionAndLabels.select(['label','prediction']))
+    evaluator = MulticlassClassificationEvaluator(predictionCol="prediction", metricName="accuracy")
+    accuracy = evaluator.evaluate(predictionAndLabels.select(['label','prediction']))
+    evaluator = MulticlassClassificationEvaluator(predictionCol="prediction", metricName="weightedRecall")
+    weightedRecall = evaluator.evaluate(predictionAndLabels.select(['label','prediction']))
+    evaluator = MulticlassClassificationEvaluator(predictionCol="prediction", metricName="weightedPrecision")
+    weightedPrecision = evaluator.evaluate(predictionAndLabels.select(['label','prediction']))
+
+    print("f1 : " + str(f1))
+    print("accuracy : " + str(accuracy))
+    print("weightedRecall : " + str(weightedRecall))
+    print("weightedPrecision : " + str(weightedPrecision))
