@@ -39,10 +39,10 @@ for comment in comments:
     cleaned_comment = cleaned_comment.strip()
     cleaned_comments.append(cleaned_comment)
 
-data['combined'] = cleaned_comments
-data = data[data['combined'] != '']
-data = data.drop_duplicates(subset='combined')
+data['comment'] = cleaned_comments
+data = data[data['comment'] != '']
+data = data.drop_duplicates(subset='comment')
 data = data.reset_index()
 data.drop(["index", "label", "author", "subreddit", "score",
-           "ups", "downs", "date", "created_utc", "parent_comment", "comment"], axis=1, inplace=True)
+           "ups", "downs", "date", "created_utc", "parent_comment"], axis=1, inplace=True)
 data.to_csv(r'data/input_TM.csv')
